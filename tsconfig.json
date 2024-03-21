@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "removeComments": true,
+    // "inlineSourceMap": true,
+    // "inlineSources": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleDetection": "force",
+    // "moduleResolution": "bundler",
+    // "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "target": "esnext",
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable"
+    ],
+    "jsx": "react-jsx",
+    // "outDir": "dist",
+    // "noEmit": true,
+  },
+  "include": [
+    "delete_companies.ts"
+  ]
+}
