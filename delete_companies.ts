@@ -1,63 +1,111 @@
-const div = document.createElement("div");
-const removeButton = `<button class="artdeco-pill artdeco-pill--slate artdeco-pill--choice artdeco-pill--2 search-reusables__filter-pill-button
-    artdeco-pill--selected reusable-search-filter-trigger-and-dropdown__trigger" id="searchFilter_workplaceType" aria-controls="artdeco-hoverable-artdeco-gen-43" aria-expanded="false" aria-label="Remove Company" type="button">
-Remove Company    
-</button>`
-div.innerHTML = removeButton;
-div.style.margin = "20px 20px 20px 20px";
+const LOCAL_STORAGE_KEY = "companies_3n-AXlJ_QAGOOU1qn1xjc";
 
-const companies: string[] = localStorage.getItem("companies") ? JSON.parse(localStorage.getItem("companies") as string) : [];
+class AssertionError extends Error {
+  override readonly name = "AssertionError" as const;
+}
 
-function deleteCompany() {
-  const parentEl = document.querySelector("#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__list > div > ul");
-  const jobs = parentEl?.getElementsByClassName("ember-view   jobs-search-results__list-item occludable-update p0 relative scaffold-layout__list-item");
-  if (jobs) {
-    const jobsListCopy = Array.from(jobs);
-    const jobsToRemove = jobsListCopy.filter((job) => {
-      const companyEl = job.querySelector("span.job-card-container__primary-description")
-      const companyText = companyEl ? companyEl.textContent?.trim() : "";
-      return companyText && companies.includes(companyText?.trim());
-    });
+function assert(expr: unknown, msg?: string): asserts expr {
+  if (!expr) throw new AssertionError(msg);
+}
 
-    for (const job of jobsToRemove) {
-      job.remove();
+function getJobsParentElement(): HTMLUListElement {
+  const parentEl = document.querySelector<HTMLUListElement>(
+    "#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__list > div > ul",
+  );
+  assert(parentEl, "Jobs parent element not found");
+  return parentEl;
+}
+
+function getJobs(): HTMLLIElement[] {
+  const parentEl = getJobsParentElement();
+  // const jobs = parentEl?.getElementsByClassName(
+  //   "ember-view   jobs-search-results__list-item occludable-update p0 relative scaffold-layout__list-item",
+  // );
+  const jobs = parentEl.querySelectorAll<HTMLLIElement>(
+    ":scope > li[data-occludable-job-id]",
+  );
+  return jobs ? [...jobs] : [];
+}
+
+function getCompanyFromJob(job: HTMLElement): HTMLSpanElement | null {
+  return job.querySelector<HTMLSpanElement>(
+    ":scope span.job-card-container__primary-description",
+  );
+}
+
+function removeJobs(companies: Set<string>): void {
+  for (const job of getJobs()) {
+    const companyText = getCompanyFromJob(job)?.textContent?.trim();
+    if (companyText && companies.has(companyText)) job.remove();
+  }
+}
+
+function removeCompanyJobs(companies: Set<string>, job: HTMLElement): void {
+  const companyText = getCompanyFromJob(job)?.textContent?.trim();
+  if (companyText) {
+    const acceptance = window.confirm(
+      `Are you sure you want to remove "${companyText}"?`,
+    );
+    if (acceptance) {
+      companies.add(companyText);
+      localStorage.setItem(
+        LOCAL_STORAGE_KEY,
+        JSON.stringify([...companies].sort()),
+      );
+      removeJobs(companies);
     }
   }
 }
 
-function watchCompanies() {
-  deleteCompany();
-  const parentEl = document.querySelector("#main > div > div.scaffold-layout__list-detail-inner.scaffold-layout__list-detail-inner--grow > div.scaffold-layout__list > div > ul");
-  const jobs = parentEl?.getElementsByClassName("ember-view   jobs-search-results__list-item occludable-update p0 relative scaffold-layout__list-item");
-
-  parentEl?.addEventListener("wheel", () => {
-    console.log("scrolling");
-    deleteCompany();
+function watchCompanies(companies: Set<string>): void {
+  removeJobs(companies);
+  getJobsParentElement().addEventListener("wheel", () => {
+    console.log("scrolling"); // IMPORTANT!
+    removeJobs(companies);
   });
 
-  if (jobs) {
-    for (const job of jobs) {
-      const divCopy = div.cloneNode(true);
-      divCopy.addEventListener("click", () => {
-        const companyEl = job.querySelector("span.job-card-container__primary-description");
-        if (companyEl) {
-          const companyText = companyEl.textContent?.trim();
-          if (companyText) {
-            const answer = prompt("Are you sure you want to remove this company? If so, click okay", companyText);
-            if (answer) {
-              console.log("answer: ", answer);
-              companies.push(companyText);
-              localStorage.setItem("companies", JSON.stringify(companies));
-              deleteCompany();
-            }
-          }
-        }
-      });
-      job.appendChild(divCopy);
-    }
+  for (const job of getJobs()) {
+    // job.insertAdjacentHTML("beforeend", `
+    //   <div data-inserted style="margin: 20px;">
+    //     <button
+    //       class="artdeco-pill artdeco-pill--slate artdeco-pill--choice artdeco-pill--2 search-reusables__filter-pill-button artdeco-pill--selected reusable-search-filter-trigger-and-dropdown__trigger"
+    //       id="searchFilter_workplaceType"
+    //       aria-controls="artdeco-hoverable-artdeco-gen-43"
+    //       aria-expanded="false"
+    //       aria-label="Remove Company"
+    //       type="button"
+    //     >
+    //       Remove Company
+    //     </button>
+    //   </div>
+    // `);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className =
+      "artdeco-pill artdeco-pill--slate artdeco-pill--choice artdeco-pill--2 search-reusables__filter-pill-button artdeco-pill--selected reusable-search-filter-trigger-and-dropdown__trigger";
+    button.id = "searchFilter_workplaceType";
+    button.setAttribute("aria-controls", "artdeco-hoverable-artdeco-gen-43");
+    button.setAttribute("aria-expanded", "false");
+    button.setAttribute("aria-label", "Remove Company");
+    button.textContent = "Remove Company";
+
+    button.addEventListener("click", () => removeCompanyJobs(companies, job));
+
+    const div = document.createElement("div");
+    div.style.margin = "20px";
+    div.appendChild(button);
+    job.appendChild(div);
   }
 }
 
-setTimeout(() => {
-  watchCompanies();
-}, 3000);
+// https://www.linkedin.com/voyager/api/graphql?queryId
+function main() {
+  const companies = new Set<string>(
+    JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) ?? "[]"),
+  );
+
+  setTimeout(() => watchCompanies(companies), 3000);
+}
+
+main();
