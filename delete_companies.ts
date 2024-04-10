@@ -65,21 +65,6 @@ function watchCompanies(companies: Set<string>): void {
   });
 
   for (const job of getJobs()) {
-    // job.insertAdjacentHTML("beforeend", `
-    //   <div data-inserted style="margin: 20px;">
-    //     <button
-    //       class="artdeco-pill artdeco-pill--slate artdeco-pill--choice artdeco-pill--2 search-reusables__filter-pill-button artdeco-pill--selected reusable-search-filter-trigger-and-dropdown__trigger"
-    //       id="searchFilter_workplaceType"
-    //       aria-controls="artdeco-hoverable-artdeco-gen-43"
-    //       aria-expanded="false"
-    //       aria-label="Remove Company"
-    //       type="button"
-    //     >
-    //       Remove Company
-    //     </button>
-    //   </div>
-    // `);
-
     const button = document.createElement("button");
     button.type = "button";
     button.className =
